@@ -48,14 +48,7 @@ export default function PairPage() {
         setError(data.error || "Eşleştirme yapılamadı");
         setLoading(false);
       } else {
-        // Update session so client recognizes coupleId
-        await update({
-          coupleId: data.coupleId,
-          partnerId: data.partnerId,
-        });
-        
-        router.push("/dashboard");
-        router.refresh();
+        window.location.href = "/dashboard";
       }
     } catch (err) {
       setError("Bir bağlantı hatası oluştu");
@@ -78,13 +71,7 @@ export default function PairPage() {
         setError(data.error || "Sanal eşleştirme yapılamadı");
         setLoading(false);
       } else {
-        await update({
-          coupleId: data.coupleId,
-          partnerId: data.partnerId,
-        });
-        
-        router.push("/dashboard");
-        router.refresh();
+        window.location.href = "/dashboard";
       }
     } catch (err) {
       setError("Bir bağlantı hatası oluştu");
