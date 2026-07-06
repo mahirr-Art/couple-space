@@ -63,6 +63,35 @@ export default function PairPage() {
     }
   };
 
+  const handleMockPair = async () => {
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/pair/mock", {
+        method: "POST",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Sanal eşleştirme yapılamadı");
+        setLoading(false);
+      } else {
+        await update({
+          coupleId: data.coupleId,
+          partnerId: data.partnerId,
+        });
+        
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch (err) {
+      setError("Bir bağlantı hatası oluştu");
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden px-4">
       {/* Background Blurs */}
@@ -153,10 +182,20 @@ export default function PairPage() {
           </form>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-glass-border flex justify-between items-center">
+        <div className="mt-12 pt-6 border-t border-glass-border flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="text-xs text-foreground/50">
             Giriş yapan: <span className="font-semibold text-foreground">{session?.user?.email}</span>
           </div>
+
+          <button
+            type="button"
+            onClick={handleMockPair}
+            disabled={loading}
+            className="text-xs font-semibold text-primary hover:underline cursor-pointer"
+          >
+            Sanal Partner ile Eşleş (Test Modu)
+          </button>
+
           <button
             onClick={() => signOut({ callbackUrl: "/auth" })}
             className="flex items-center gap-1.5 text-xs text-red-500 hover:underline cursor-pointer"

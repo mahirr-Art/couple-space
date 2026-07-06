@@ -16,6 +16,40 @@ export default function AuthPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const handleDevLogin = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      // Create dev user if not exists
+      const registerRes = await fetch("/api/auth/register/dev", {
+        method: "POST",
+      });
+
+      if (!registerRes.ok) {
+        setError("Geliştirici hesabı oluşturulamadı");
+        setLoading(false);
+        return;
+      }
+
+      // Log in
+      const res = await signIn("credentials", {
+        email: "dev@couple.space",
+        password: "password123",
+        redirect: false,
+      });
+
+      if (res?.error) {
+        setError("Hızlı giriş yapılamadı");
+        setLoading(false);
+      } else {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch (err) {
+      setError("Hızlı giriş sırasında bir hata oluştu");
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,6 +210,26 @@ export default function AuthPage() {
               "Giriş Yap"
             ) : (
               "Kayıt Ol & Başlat"
+            )}
+          </motion.button>
+
+          <div className="relative my-6 flex items-center justify-center">
+            <div className="border-t border-glass-border w-full absolute" />
+            <span className="bg-background/90 backdrop-blur-md px-3 text-[10px] text-foreground/45 font-bold uppercase relative z-10">Veya</span>
+          </div>
+
+          <motion.button
+            type="button"
+            onClick={handleDevLogin}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            disabled={loading}
+            className="w-full py-3 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary font-bold text-xs shadow-sm hover:shadow-primary/5 transition-all flex items-center justify-center cursor-pointer disabled:opacity-50"
+          >
+            {loading ? (
+              <span className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+            ) : (
+              "Tek Tıkla Hızlı Giriş (Test Modu)"
             )}
           </motion.button>
         </form>

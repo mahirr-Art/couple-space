@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     }
 
     // Start a transaction to create Couple and link users
-    const couple = await db.$transaction(async (tx) => {
+    const couple = await db.$transaction(async (tx: any) => {
       // Create Couple
       const newCouple = await tx.couple.create({
         data: {},

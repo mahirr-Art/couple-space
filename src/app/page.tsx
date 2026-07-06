@@ -4,11 +4,11 @@ import { auth } from "@/auth";
 export default async function HomePage() {
   const session = await auth();
 
-  if (!session) {
+  if (!session || !session.user) {
     redirect("/auth");
   }
 
-  if (!(session.user as any).coupleId) {
+  if (!(session.user as any)?.coupleId) {
     redirect("/pair");
   }
 
