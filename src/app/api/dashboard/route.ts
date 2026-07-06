@@ -25,8 +25,8 @@ export async function GET() {
       return NextResponse.json({ error: "İlişki bulunamadı" }, { status: 404 });
     }
 
-    const me = couple.users.find((u) => u.id === userId);
-    const partner = couple.users.find((u) => u.id !== userId);
+    const me = couple.users.find((u: any) => u.id === userId);
+    const partner = couple.users.find((u: any) => u.id !== userId);
 
     // Fetch moods
     const myLatestMood = await db.moodLog.findFirst({
