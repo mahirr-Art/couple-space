@@ -19,7 +19,7 @@ export async function GET() {
 
     // Mask locked content
     const now = new Date();
-    const processedCapsules = capsules.map((capsule) => {
+    const processedCapsules = capsules.map((capsule: any) => {
       const isLocked = new Date(capsule.unlockDate) > now;
       return {
         id: capsule.id,
