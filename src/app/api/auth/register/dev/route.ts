@@ -6,25 +6,23 @@ export async function POST() {
   try {
     const devEmail = "dev@couple.space";
     const devPassword = "password123";
+    const partnerEmail = "elif.dev@couple.space";
+    const partnerPairCode = "PARTNERDEV";
 
+    const hashedPassword = await bcrypt.hash(devPassword, 10);
+
+    // 1. Find or create dev user
     let user = await db.user.findUnique({
       where: { email: devEmail },
     });
 
     if (!user) {
-      const hashedPassword = await bcrypt.hash(devPassword, 10);
-      
-      // Generate a pair code
       let pairCode = "";
       let codeExists = true;
       while (codeExists) {
         pairCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-        const existingCode = await db.user.findUnique({
-          where: { pairCode },
-        });
-        if (!existingCode) {
-          codeExists = false;
-        }
+        const existingCode = await db.user.findUnique({ where: { pairCode } });
+        if (!existingCode) codeExists = false;
       }
 
       user = await db.user.create({
@@ -37,55 +35,49 @@ export async function POST() {
       });
     }
 
-    // Automatically pair the dev user if they are not paired
-    if (!user.coupleId) {
-      const hashedPassword = await bcrypt.hash(devPassword, 10);
-      const partnerEmail = "elif.dev@couple.space";
-      const partnerPairCode = "PARTNERDEV";
+    // 2. Find or create partner
+    let partner = await db.user.findUnique({
+      where: { email: partnerEmail },
+    });
 
-      await db.$transaction(async (tx: any) => {
-        // Create Couple
-        const newCouple = await tx.couple.create({
+    if (!partner) {
+      partner = await db.user.create({
+        data: {
+          name: "Elif",
+          email: partnerEmail,
+          password: hashedPassword,
+          pairCode: partnerPairCode,
+        },
+      });
+    }
+
+    // 3. Pair them if they are not paired
+    if (!user.coupleId || !partner.coupleId) {
+      const coupleId = user.coupleId || partner.coupleId;
+      
+      let finalCoupleId = coupleId;
+      if (!finalCoupleId) {
+        const newCouple = await db.couple.create({
           data: {
             anniversaryDate: new Date(),
             sharedPlaylistUrl: "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGsy7275",
           },
         });
+        finalCoupleId = newCouple.id;
 
-        // Create partner
-        const partner = await tx.user.create({
+        // Seed welcome chat messages
+        await db.chatMessage.create({
           data: {
-            name: "Elif",
-            email: partnerEmail,
-            password: hashedPassword,
-            pairCode: partnerPairCode,
-            coupleId: newCouple.id,
-            partnerId: user.id,
-          },
-        });
-
-        // Update dev user
-        await tx.user.update({
-          where: { id: user.id },
-          data: {
-            coupleId: newCouple.id,
-            partnerId: partner.id,
-          },
-        });
-
-        // Create sample welcome messages
-        await tx.chatMessage.create({
-          data: {
-            coupleId: newCouple.id,
+            coupleId: finalCoupleId,
             senderId: partner.id,
             content: "Couple Space'e hoş geldin Mahir! Burası bizim ortak alanımız. ❤️",
           },
         });
 
         // Add sample memory
-        await tx.memory.create({
+        await db.memory.create({
           data: {
-            coupleId: newCouple.id,
+            coupleId: finalCoupleId,
             title: "Paris Seyahatimiz",
             description: "Eyfel Kulesi karşısında kahve içtiğimiz o güzel sabah.",
             mediaUrl: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=600",
@@ -95,15 +87,32 @@ export async function POST() {
         });
 
         // Add sample calendar event
-        await tx.calendarEvent.create({
+        await db.calendarEvent.create({
           data: {
-            coupleId: newCouple.id,
+            coupleId: finalCoupleId,
             title: "Yıl Dönümümüz",
             description: "İlk buluştuğumuz gün.",
             eventDate: new Date(new Date().getFullYear() + 1, new Date().getMonth(), new Date().getDate()),
             isRecurring: true,
           },
         });
+      }
+
+      // Link both users to the couple
+      await db.user.update({
+        where: { id: user.id },
+        data: {
+          coupleId: finalCoupleId,
+          partnerId: partner.id,
+        },
+      });
+
+      await db.user.update({
+        where: { id: partner.id },
+        data: {
+          coupleId: finalCoupleId,
+          partnerId: user.id,
+        },
       });
     }
 
