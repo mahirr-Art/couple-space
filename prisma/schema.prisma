@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String         @id @default(uuid())
+  name           String?
+  email          String         @unique
+  password       String
+  pairCode       String         @unique
+  partnerId      String?        @unique
+  coupleId       String?
+  avatarUrl      String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  partner        User?          @relation("PartnerRelation", fields: [partnerId], references: [id])
+  partnerOf      User?          @relation("PartnerRelation")
+  couple         Couple?        @relation(fields: [coupleId], references: [id])
+  messagesSent   ChatMessage[]
+  journalEntries JournalEntry[]
+  moodLogs       MoodLog[]
+}
+
+model Couple {
+  id                String            @id @default(uuid())
+  anniversaryDate   DateTime?
+  sharedPlaylistUrl String?
+  createdAt         DateTime          @default(now())
+
+  users             User[]
+  memories          Memory[]
+  journalEntries    JournalEntry[]
+  timeCapsules      TimeCapsule[]
+  calendarEvents    CalendarEvent[]
+  bucketListItems   BucketListItem[]
+  places            VisitedPlace[]
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  coupleId  String
+  senderId  String
+  content   String?
+  mediaUrl  String?
+  mediaType String?  // "image" | "video" | "audio"
+  createdAt DateTime @default(now())
+
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+model Memory {
+  id          String   @id @default(uuid())
+  coupleId    String
+  title       String
+  description String?
+  mediaUrl    String?
+  mediaType   String?  // "image" | "video"
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  couple      Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+}
+
+model JournalEntry {
+  id        String   @id @default(uuid())
+  coupleId  String
+  authorId  String
+  title     String
+  content   String   @db.Text
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  couple    Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model TimeCapsule {
+  id         String   @id @default(uuid())
+  coupleId   String
+  title      String
+  content    String   @db.Text
+  mediaUrl   String?
+  mediaType  String?
+  unlockDate DateTime
+  isOpened   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  couple     Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+}
+
+model CalendarEvent {
+  id          String   @id @default(uuid())
+  coupleId    String
+  title       String
+  description String?
+  eventDate   DateTime
+  isRecurring Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  couple      Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+}
+
+model BucketListItem {
+  id          String    @id @default(uuid())
+  coupleId    String
+  title       String
+  description String?
+  category    String    // "travel" | "film" | "adventure" | "other"
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+  rating      Int?
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  couple      Couple    @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+}
+
+model MoodLog {
+  id        String   @id @default(uuid())
+  userId    String
+  mood      Int      // 1 (sad) to 5 (happy)
+  note      String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VisitedPlace {
+  id          String   @id @default(uuid())
+  coupleId    String
+  latitude    Float
+  longitude   Float
+  name        String
+  description String?
+  visitDate   DateTime @default(now())
+
+  couple      Couple   @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+}
